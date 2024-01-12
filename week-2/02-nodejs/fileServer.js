@@ -27,12 +27,6 @@ app.get('/files' , async (req, res) => {
 
   });
 
-  // fs.readdir(path.join(__dirname, './files/'), (err, files) => {
-  //   if (err) {
-  //       return res.status(500).json({ error: 'Failed to retrieve files' });
-  //   }
-  //   res.json(files);
-  //   });
 })
 
 app.get('/file/:filename', async (req, res) => {
@@ -46,7 +40,7 @@ app.get('/file/:filename', async (req, res) => {
 })
 
 app.all('*', function(req, res, next) {
-  res.status(404).send("Route not found")  // call next() here to move on to next middleware/router
+  res.status(404).send("Route not found") 
 })
 
 // app.listen(3000, () => {
