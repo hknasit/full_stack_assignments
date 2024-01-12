@@ -41,9 +41,99 @@
  */
   const express = require('express');
   const bodyParser = require('body-parser');
-  
+  const fs = require('fs');
+
   const app = express();
-  
+
   app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({extended:true}))
+
+  function readFileData(path){
+    return new Promise((resolve, rejects) => {
+      fs.readFile(path, 'utf-8', (err, data) => {
+        resolve(JSON.parse(data))
+      })
+    })
+  }
+
+  app.get('/todos', async (req, res)  => {
+    const fileData = await readFileData("todos.json")
+    res.status(200).json(fileData);
+  })
+
+  app.get('/todos/:id', async (req, res) => {
+    
+    const fileData = await readFileData('todos.json');
+    if(!fileData.length == 0){
+      
+      const todo = new Array(...fileData).find((todo) => todo.id == req.params.id)
+      if(todo){
+      
+        res.status(200).json(todo);
+      }else {
+      res.status(404).send("Data not found");
+      }
+    }else {
+      res.status(404).send("Data not found");
+    }
+  })
+
+  function writeFileData(path, data){
+    return new Promise( (resolve, reject) => {
+     fs.writeFileSync(path, data)
+      resolve()
+    })
+  }
+
+  app.post('/todos', async (req, res) => {
+    // console.log(req.body)
+    let oldTodos = await readFileData('todos.json');
+    const lastNumber = Number(new Array(...oldTodos).pop()?.id || 0);
+    const newTodo = {id:lastNumber+1, ...req.body}
+    let newTodos = [...oldTodos, newTodo];
+    await writeFileData('todos.json', JSON.stringify(newTodos));
+
+    res.status(201).json({id: lastNumber+1})
+  })
+
+  app.put('/todos/:id', async (req, res) => {
+
+    const oldTodos =await readFileData('todos.json');
+    const oldTodo = new Array(...oldTodos).find((todo) => todo.id == req.params.id);
+    if(oldTodo){
+      const newTodos =  Array(...oldTodos).map((todo) => {
+        if(todo.id == req.params.id){
+          const newTodo = {id: req.params.id, ...req.body}
+          return newTodo
+        }else {
+          return todo
+        }
+      })
+
+      await writeFileData('todos.json', JSON.stringify(newTodos));
+      res.status(200).send("todo updated")
+    }else {
+      res.status(404).send("Data not found")
+    }
+  })
+
+  app.delete('/todos/:id',async (req, res) => {
+    const oldTodos = await readFileData('todos.json');
+    const todoToRemove  = oldTodos.find((todo) => todo.id == req.params.id);
+     if(todoToRemove){
+       // remove from the array and write the new array in the file
+       const newTodos = oldTodos.filter((todo) => todo.id != todoToRemove.id);
+       await writeFileData('todos.json', JSON.stringify(newTodos))
+    
+       res.status(200).send("Data deleted")
+    }else{
+      res.status(404).send("Data not found")
+    }
+  })
+
+  // app.listen(3000, () => {
+  //   console.log("Todo server is listening on port 3000")
+  // })
+
   
   module.exports = app;

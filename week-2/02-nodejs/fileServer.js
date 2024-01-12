@@ -17,5 +17,40 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 
+app.get('/files' , async (req, res) => {
+
+ fs.readdir('files', (err, data) => {
+    if(err) return res.status(500).json({ error: 'Failed to retrieve files' });
+    
+
+    res.status(200).json(data)
+
+  });
+
+  // fs.readdir(path.join(__dirname, './files/'), (err, files) => {
+  //   if (err) {
+  //       return res.status(500).json({ error: 'Failed to retrieve files' });
+  //   }
+  //   res.json(files);
+  //   });
+})
+
+app.get('/file/:filename', async (req, res) => {
+  const fileName = req.params.filename;
+   fs.readFile(`files/${fileName}`, (err, data) => {
+    if(err) return res.status(404).send("File not found");
+
+    res.status(200).send(data)
+
+  })
+})
+
+app.all('*', function(req, res, next) {
+  res.status(404).send("Route not found")  // call next() here to move on to next middleware/router
+})
+
+// app.listen(3000, () => {
+//   console.log("File server listening on port 3000");
+// })
 
 module.exports = app;
