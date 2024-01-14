@@ -1,6 +1,6 @@
-const request = require('supertest');
-const assert = require('assert');
-const express = require('express');
+const request = require("supertest");
+const assert = require("assert");
+const express = require("express");
 const app = express();
 // You have been given an express server which has a few endpoints.
 // Your task is to create a global middleware (app.use) which will
@@ -11,17 +11,59 @@ const app = express();
 // You have been given a numberOfRequestsForUser object to start off with which
 // clears every one second
 
-let numberOfRequestsForUser = {};
+let numberOfRequestsForUser = {
+  "user-id": "",
+  count: 0,
+  Time: new Date().getSeconds(),
+};
 setInterval(() => {
-    numberOfRequestsForUser = {};
-}, 1000)
+  numberOfRequestsForUser = {
+    "user-id": "",
+    count: 0,
+    Time: new Date().getSeconds(),
+  };
+}, 1000);
 
-app.get('/user', function(req, res) {
-  res.status(200).json({ name: 'john' });
+app.use(middleware);
+
+function middleware(req, res, next) {
+  if (numberOfRequestsForUser["user-id"] == "") {
+  
+    numberOfRequestsForUser["user-id"] = req.headers["user-id"];
+    numberOfRequestsForUser.count = numberOfRequestsForUser.count + 1;
+    numberOfRequestsForUser.Time = new Date().getSeconds();
+    console.log(numberOfRequestsForUser)
+    next();
+    return;
+  }
+
+  if (numberOfRequestsForUser["user-id"] == req.headers["user-id"]) {
+    if (
+      numberOfRequestsForUser.count < 5 &&
+      numberOfRequestsForUser.Time == new Date().getSeconds()
+    ) {
+      numberOfRequestsForUser.count =  numberOfRequestsForUser.count + 1;
+      console.log('less then 5: '+  numberOfRequestsForUser.count)
+      next();
+      return;
+    } else {
+      console.log('More then 5: '+ numberOfRequestsForUser.count)
+      throw new Error("something went wrong");
+      return;
+    }
+  }
+}
+
+app.get("/user", function (req, res) {
+  res.status(200).json({ name: "john" });
 });
 
-app.post('/user', function(req, res) {
-  res.status(200).json({ msg: 'created dummy user' });
+app.post("/user", function (req, res) {
+  res.status(200).json({ msg: "created dummy user" });
+});
+
+app.use((err, req, res, next) => {
+  res.status(404).send(err);
 });
 
 module.exports = app;
